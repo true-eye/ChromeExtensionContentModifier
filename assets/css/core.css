@@ -1,0 +1,20 @@
+.crx_mouse_visited {
+  background-clip: #bcd5eb!important;
+  outline: 2px dashed #e9af6e!important;
+}
+
+
+.crx_txt_mouse_visited {
+  background-clip: #bcd5eb!important;
+  outline: 2px dashed #e9af6e!important;
+}
+
+.crx_img_mouse_visited {
+  background-clip: #bcd5eb!important;
+  outline: 2px dashed #5166bb!important;
+}
+
+.crx_selected {
+  background-clip: red!important;
+  outline: 2px solid rgb(38, 120, 231) !important;
+}

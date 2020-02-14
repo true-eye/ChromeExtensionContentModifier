@@ -1,0 +1,46 @@
+<html>
+<head>
+    <script type="text/javascript" src="../js/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../js/popup.js"></script>
+    <link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link href="../css/style.css" rel="stylesheet">
+    <title></title>
+</head>
+<body>
+	<style>
+		.wrapper {
+			padding: 0;
+			text-align: center;
+			min-width: 400px;
+		}
+	</style>
+	<div class="wrapper container">
+		<div class="card card-container" id="account-card">
+			<div style="margin-bottom: 1rem;">
+				You've signed in as <a href="#" id="account-email">example@domain.com</a>
+			</div>
+			<button class="btn btn-lg btn-primary btn-signout" id="signout" type="button">Sign out</button>
+		</div>
+		<div class="card card-container" id="login-card">
+			<img class="profile-img-card" src="https://hyperise.com/wp-content/uploads/2019/05/logo-final_.png" alt="" />
+			
+			<p id="profile-name" class="profile-name-card"></p>
+			<div class="alert alert-danger alert-auth-fail" role="alert">
+				Email or Password is wrong. Please try again!
+			</div>
+			<form class="form-signin">
+				<span id="reauth-email" class="reauth-email"></span>
+				<input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus initialValue="hamesmodric@outlook.com">
+				<input type="password" id="inputPassword" class="form-control" placeholder="Password" required initialValue="jm03120622">
+				<button class="btn btn-lg btn-primary btn-block btn-signin" id="signin" type="button">Sign in</button>
+			</form>
+			<a href="#" class="forgot-password">
+				Forgot the password?
+			</a>
+		</div>
+	</div>
+
+</body>
+</html>
