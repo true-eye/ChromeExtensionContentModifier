@@ -38,8 +38,11 @@ var bLoadingMetaImgs = false;
 var lastCursorPosition = null;
 
 var personalizations = null;
+var oldSections = [];
+var currentSections = [];
+var bSectionsModified = false;
 var bLoadingPersonalizations = false;
-var sections = [];
+var errorLoadingPersonalizations = null;
 var authToken = null;
 
 var searchPattern = '';
@@ -124,7 +127,6 @@ var searchPattern = '';
       var posy = 0;
 
       if (!e) var e = window.event;
-      console.log(e.pageX, e.pageY, e.clientX, e.clientY);
 
       if (e.pageX || e.pageY) {
         posx = e.pageX;
@@ -273,8 +275,6 @@ var searchPattern = '';
       windowWidth = window.innerWidth;
       windowHeight = window.innerHeight;
 
-      console.log('positions: ', clickCoords, menuWidth, menuHeight, windowWidth, windowHeight);
-
       if (windowWidth - clickCoordsX < menuWidth) {
         menu.style.left = windowWidth - menuWidth + 'px';
       } else {
@@ -296,12 +296,39 @@ var searchPattern = '';
     function menuItemListener(link) {
       console.log('Task ID - ' + taskItemInContext.getAttribute('data-id') + ', Task action - ' + link.getAttribute('data-action'));
       var action = link.getAttribute('data-action');
+      if (!selectedDOM) return;
       switch (action) {
         case 'EditHtml':
           $('.hyperise-extension-modal-center').show();
-          if (selectedDOM && selectedType == SELECTED_TYPE_IMG) {
-            $('#hyperise-extension-textarea-edit-html').val(selectedDOM.outerHTML);
+          $('#hyperise-extension-textarea-edit-html').val(selectedDOM.outerHTML);
+          break;
+        case 'Remove':
+          const path = $(selectedDOM).getPath();
+          const oldIndex = oldSections.findIndex(section => section.selector == path);
+          const currentIndex = currentSections.findIndex(section => section.selector == path);
+          let revertSections = [];
+
+          if (currentIndex < 0) break;
+
+          if (oldIndex < 0) {
+            revertSections.push({
+              selector: path,
+              type: selectedType,
+              new_image_url: currentSections[currentIndex].old_image_url,
+              new_content: currentSections[currentIndex].old_content,
+            });
+            currentSections.splice(currentIndex, 1);
+          } else {
+            revertSections.push({
+              selector: path,
+              type: selectedType,
+              new_image_url: oldSections[oldIndex].new_image_url,
+              new_content: oldSections[oldIndex].new_content,
+            });
+            currentSections[currentIndex] = { ...oldSections[oldIndex] };
           }
+          applySections(revertSections);
+          renderTopBar();
           break;
         default:
           break;
@@ -323,104 +350,6 @@ var searchPattern = '';
       console.info('document was not ready, place code here');
       myInitCode();
     });
-  }
-
-  function pasteHtmlAtCaret(html) {
-    var sel, range;
-    if (window.getSelection) {
-      // IE9 and non-IE
-      sel = window.getSelection();
-      if (sel.getRangeAt && sel.rangeCount) {
-        range = sel.getRangeAt(0);
-        range.deleteContents();
-
-        // Range.createContextualFragment() would be useful here but is
-        // non-standard and not supported in all browsers (IE9, for one)
-        var el = document.createElement('div');
-        el.innerHTML = html;
-        var frag = document.createDocumentFragment(),
-          node,
-          lastNode;
-        while ((node = el.firstChild)) {
-          lastNode = frag.appendChild(node);
-        }
-        range.insertNode(frag);
-
-        // Preserve the selection
-        if (lastNode) {
-          range = range.cloneRange();
-          range.setStartAfter(lastNode);
-          range.collapse(true);
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-      }
-    } else if (document.selection && document.selection.type != 'Control') {
-      // IE < 9
-      document.selection.createRange().pasteHTML(html);
-    }
-  }
-
-  function cursor_changed(element) {
-    var new_position = getCursorPosition(element);
-    if (new_position !== lastCursorPosition) {
-      lastCursorPosition = new_position;
-      return true;
-    }
-    return false;
-  }
-
-  function getCursorPosition(element) {
-    if ($(window.getSelection().anchorNode).is($(element))) {
-      return 0;
-    } else {
-      return window.getSelection().anchorOffset;
-    }
-  }
-
-  function createRange(node, chars, range) {
-    if (!range) {
-      range = document.createRange();
-      range.selectNode(node);
-      range.setStart(node, 0);
-    }
-
-    if (chars.count === 0) {
-      range.setEnd(node, chars.count);
-    } else if (node && chars.count > 0) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (node.textContent.length < chars.count) {
-          chars.count -= node.textContent.length;
-        } else {
-          range.setEnd(node, chars.count);
-          chars.count = 0;
-        }
-      } else {
-        for (var lp = 0; lp < node.childNodes.length; lp++) {
-          range = createRange(node.childNodes[lp], chars, range);
-
-          if (chars.count === 0) {
-            break;
-          }
-        }
-      }
-    }
-
-    return range;
-  }
-
-  function setCurrentCursorPosition(position, element) {
-    if (position >= 0) {
-      var selection = window.getSelection();
-
-      range = createRange(element, { count: position });
-
-      if (range) {
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-    }
   }
 
   function GetListOfMergeTags(token) {
@@ -446,6 +375,22 @@ var searchPattern = '';
       complete: function() {
         bLoadingMetaTags = false;
       },
+    });
+  }
+
+  function GetListOfMergeImgsPromise(token) {
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: API_URL_LIST_OF_MERGE_IMGS + '?api_token=' + token,
+        type: 'GET',
+        data: null,
+        success: function(data) {
+          resolve(data);
+        },
+        error: function(request, error) {
+          reject(error);
+        },
+      });
     });
   }
 
@@ -492,24 +437,25 @@ var searchPattern = '';
   }
 
   function GetListOfPersonalizations(token) {
-    console.log('GetListOfPersonalizations Start');
-    personalizations = null;
-    bLoadingPersonalizations = true;
-    GetListOfPersonalizationsPromise(token)
-      .then(data => {
-        console.log('GetListOfPersonalizations success:');
-        if (data) {
-          personalizations = data;
-        } else {
-          personalizations = [];
-        }
-      })
-      .catch(error => {
-        console.log('GetListOfPersonalizations error:');
-      })
-      .finally(() => {
-        bLoadingPersonalizations = false;
-      });
+    // bLoadingPersonalizations = true;
+    // GetListOfPersonalizationsPromise(token)
+    //   .then(personalizations => {
+    //     var domain = window.location.hostname;
+    //     var page = window.location.pathname + window.location.search;
+    //     var index = -1;
+    //     if (personalizations) {
+    //       index = personalizations.findIndex(p => p.domain == domain && p.page == page);
+    //     }
+    //     if (index >= 0) {
+    //       count = personalizations[index].context && personalizations[index].context.length;
+    //     }
+    //   })
+    //   .catch(error => {
+    //     console.log('GetListOfPersonalizations error:');
+    //   })
+    //   .finally(() => {
+    //     bLoadingPersonalizations = false;
+    //   });
   }
 
   function isActivated() {
@@ -522,15 +468,108 @@ var searchPattern = '';
     return false;
   }
 
-  function activateExtension(token) {
-    $('body:first').addClass('extension-active');
-    // bActivated = true;
+  function replaceImage(element, url) {
+    var old_image_url = null;
+    if (element.getAttribute('srcset')) {
+      old_image_url = element.getAttribute('srcset');
+      element.setAttribute('srcset', url);
+    } else if (element.getAttribute('src')) {
+      old_image_url = element.getAttribute('src');
+      element.setAttribute('src', url);
+    }
+    return old_image_url;
+  }
 
-    GetListOfMergeTags(token);
-    GetListOfMergeImgs(token);
-    GetListOfPersonalizations(token);
+  function applySections(sections) {
+    for (let section of sections) {
+      const { selector, type, image_template_id, new_content, new_image_url } = section;
+
+      if (!selector) continue;
+
+      const element = document.querySelector(selector);
+
+      if (!element) continue;
+
+      switch (type) {
+        case SELECTED_TYPE_TEXT:
+          element.innerHTML = new_content;
+          break;
+        case SELECTED_TYPE_IMG:
+          var index = metaImgs.findIndex(img => img.id == image_template_id);
+
+          if (index >= 0 && metaImgs[index]) {
+            var newURL = metaImgs[index].base_url + metaImgs[index].image_url;
+            replaceImage(element, newURL);
+          } else if (new_image_url) {
+            replaceImage(element, new_image_url);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  function activateExtension(token) {
     authToken = token;
-    console.log('activateExtension', authToken);
+    GetListOfMergeTags(token);
+
+    bLoadingMetaImgs = true;
+    bLoadingPersonalizations = true;
+    errorLoadingPersonalizations = null;
+
+    renderTopBar();
+
+    $('body:first').addClass('extension-active');
+
+    GetListOfMergeImgsPromise(token)
+      .then(data => {
+        if (data) {
+          metaImgs = data;
+        } else {
+          metaImgs = [];
+        }
+        GetListOfPersonalizationsPromise(token)
+          .then(personalizations => {
+            var domain = window.location.hostname;
+            var page = window.location.pathname + window.location.search;
+            var index = -1;
+
+            if (personalizations) {
+              index = personalizations.findIndex(p => p.domain == domain && p.page == page);
+            }
+
+            oldSections = [];
+            currentSections = [];
+
+            if (index >= 0 && personalizations[index].context) {
+              oldSections = [...personalizations[index].context];
+              currentSections = [...personalizations[index].context];
+            }
+
+            errorLoadingPersonalizations = null;
+            applySections(oldSections);
+            renderTopBar();
+          })
+          .catch(error => {
+            console.log('GetListOfPersonalizations error:', error);
+            errorLoadingPersonalizations = error;
+          })
+          .finally(() => {
+            bLoadingPersonalizations = false;
+            renderTopBar();
+          });
+      })
+      .catch(error => {
+        metaImgs = [];
+        bLoadingPersonalizations = false;
+        errorLoadingPersonalizations = error;
+        console.log('GetListOfMergeImgsPromise error:', error);
+      })
+      .finally(() => {
+        bLoadingMetaImgs = false;
+        renderTopBar();
+      });
   }
 
   function removeAllClass(className) {
@@ -549,6 +588,7 @@ var searchPattern = '';
 
   function deactivateExtension() {
     $('body:first').removeClass('extension-active');
+    $('.hyperise-extension-modal-center').hide();
 
     removeAllClass(MOUSE_TXT_VISITED_CLASSNAME);
     removeAllClass(MOUSE_IMG_VISITED_CLASSNAME);
@@ -568,6 +608,7 @@ var searchPattern = '';
     selectedDOM = null;
     selectedType = null;
 
+    // Indicate if it's inline text editing mode
     bInlineTextEditing = false;
 
     metaTags = null;
@@ -579,11 +620,14 @@ var searchPattern = '';
     lastCursorPosition = null;
 
     personalizations = null;
+    oldSections = [];
+    currentSections = [];
+    bSectionsModified = false;
     bLoadingPersonalizations = false;
-    sections = [];
+    errorLoadingPersonalizations = null;
     authToken = null;
+
     searchPattern = '';
-    $('.hyperise-extension-modal-center').hide();
   }
 
   function isExtensionElement(srcElement) {
@@ -600,22 +644,17 @@ var searchPattern = '';
   }
 
   function renderTopBar() {
-    console.log('renderTopBar', count);
     var count = 0;
-    var domain = window.location.hostname;
-    var page = window.location.pathname + window.location.search;
-    var index = -1;
 
-    if (personalizations) {
-      index = personalizations.findIndex(p => p.domain == domain && p.page == page);
-    }
-
-    if (index >= 0) {
-      count = personalizations[index].context && personalizations[index].context.length;
+    if (currentSections) {
+      count = currentSections.length;
     }
 
     var title = count + ' Personalization Change' + (count > 1 ? 's' : '');
-    var disabled = !sections || sections.length == 0 ? 'disabled' : '';
+    var disabled = !bSectionsModified ? 'disabled' : '';
+
+    if (bLoadingPersonalizations) title = 'Loading...';
+    if (errorLoadingPersonalizations) title = 'Failed to load! Please try again!';
 
     $('.hyperise-extension-top-bar').html(
       '<button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-cancel" ' +
@@ -628,33 +667,51 @@ var searchPattern = '';
     );
 
     $('.hyperise-extension-top-bar-cancel').click(function() {
-      sections = [];
+      // todo:
+      //    - loop currenSections and compare with the oldSections
+      //        - revert to original content for diffs
+      let revertSections = [];
+      for (let currentSection of currentSections) {
+        const { selector, type, image_template_id, old_image_url, new_content, old_content } = currentSection;
+        let index = oldSections.findIndex(section => section.selector == currentSection.selector);
+        if (index < 0) {
+          revertSections.push({
+            selector,
+            type,
+            image_template_id: null,
+            new_image_url: old_image_url,
+            new_content: old_content,
+          });
+        } else {
+          const oldSection = oldSections[index];
+          if (
+            type != oldSection.type ||
+            image_template_id != oldSection.image_template_id ||
+            old_image_url != oldSection.old_image_url ||
+            new_content != oldSection.new_content ||
+            old_content != oldSection.old_content
+          ) {
+            revertSections.push(oldSection);
+          }
+        }
+      }
+
+      applySections(revertSections);
+      bSectionsModified = false;
+      currentSections = [...oldSections];
       renderTopBar();
     });
 
     $('.hyperise-extension-top-bar-save').click(function() {
-      if (sections.length == 0) return;
-
-      var newSections = sections;
-      sections = [];
+      if (!bSectionsModified) return;
 
       $('.hyperise-extension-top-bar-save').html('Saving...');
 
       var domain = window.location.hostname;
       var page = window.location.pathname + window.location.search;
 
-      personalizations = null;
-      bLoadingPersonalizations = true;
       GetListOfPersonalizationsPromise(authToken)
-        .then(data => {
-          console.log('GetListOfPersonalizations success:');
-          if (data) {
-            personalizations = data;
-          } else {
-            personalizations = [];
-          }
-
-          var upsertData = [...personalizations]
+        .then(personalizations => {
           var index = -1;
 
           if (personalizations) {
@@ -662,27 +719,20 @@ var searchPattern = '';
           }
 
           if (index >= 0) {
-            upsertData[index].context = 
-          }
-
-          if (myPersonalization) {
             // needs to update the original
             $.ajax({
-              url: API_URL_LIST_OF_PERSONALIZATIONS + '/' + myPersonalization.id + '?api_token=' + authToken,
+              url: API_URL_LIST_OF_PERSONALIZATIONS + '/' + personalizations[index].id + '?api_token=' + authToken,
               type: 'POST',
-              data: {
-                domain: domain,
-                page: page,
-                context: myPersonalization.context ? myPersonalization.context.concat(newSections) : newSections,
-              },
+              data: { domain, page, context: [...currentSections] },
               success: function(data) {
-                console.log('Update Personalizations Success', data);
+                oldSections = [...currentSections];
+                bSectionsModified = false;
               },
               error: function(request, error) {
-                console.log('Update Personalizations Error');
+                console.log('Update Personalizations Error', error);
               },
               complete: function() {
-                renderTopBar(sections.length);
+                renderTopBar();
               },
             });
           } else {
@@ -691,25 +741,22 @@ var searchPattern = '';
             $.ajax({
               url: API_URL_LIST_OF_PERSONALIZATIONS + '?api_token=' + authToken,
               type: 'POST',
-              data: {
-                domain: domain,
-                page: page,
-                context: newSections,
-              },
+              data: { domain, page, context: newSections },
               success: function(data) {
-                console.log('Create Personalizations Success', data);
+                oldSections = [...currentSections];
+                bSectionsModified = false;
               },
               error: function(request, error) {
-                console.log('Create Personalizations Error');
+                console.log('Create Personalizations Error', error);
               },
               complete: function() {
-                renderTopBar(sections.length);
+                renderTopBar();
               },
             });
           }
         })
         .catch(error => {
-          console.log('GetListOfPersonalizations error:');
+          console.log('GetListOfPersonalizations error:', error);
         })
         .finally(() => {
           bLoadingPersonalizations = false;
@@ -839,9 +886,6 @@ var searchPattern = '';
                     <li class="hyperise-extension-context-menu__item">
                         <a href="#" class="hyperise-extension-context-menu__link" data-action="Insert">Insert</a>
                     </li>
-                    <li class="hyperise-extension-context-menu__item">
-                        <a href="#" class="hyperise-extension-context-menu__link" data-action="RunJS">Run Javascript</a>
-                    </li>
                 </ul>
             </nav>
         `;
@@ -861,8 +905,19 @@ var searchPattern = '';
 
     $('#hyperise-extension-button-link-apply').click(function() {
       var newHtml = $('#hyperise-extension-textarea-edit-html').val();
-      if (selectedDOM && selectedType == SELECTED_TYPE_IMG) {
+      if (selectedDOM) {
+        var old_content = selectedDOM.innerHTML;
         selectedDOM.outerHTML = newHtml;
+        if (selectedType == SELECTED_TYPE_TEXT) {
+          var path = $(selectedDOM).getPath();
+          var newSection = {
+            selector: path,
+            type: selectedType,
+            old_content,
+            new_content: selectedDOM.innerHTML,
+          };
+          registerSection(newSection, path);
+        }
       }
       $('.hyperise-extension-modal-center').hide();
     });
@@ -922,9 +977,23 @@ var searchPattern = '';
     }
   }
 
+  function registerSection(newSection, selector) {
+    var sectionIndex = currentSections.findIndex(section => section.selector == selector);
+    if (sectionIndex >= 0) {
+      if (currentSections[sectionIndex].old_image_url) newSection.old_image_url = currentSections[sectionIndex].old_image_url;
+      if (currentSections[sectionIndex].old_content) newSection.old_content = currentSections[sectionIndex].old_content;
+      currentSections[sectionIndex] = newSection;
+    } else {
+      currentSections.push(newSection);
+    }
+    bSectionsModified = true;
+    renderTopBar();
+  }
+
   function handleSelectTag(e) {
     e.preventDefault();
     if (selectedDOM) {
+      var old_content = selectedDOM.innerHTML;
       replaceSelectedText(this.innerHTML);
 
       var path = $(selectedDOM).getPath();
@@ -932,15 +1001,10 @@ var searchPattern = '';
         selector: path,
         type: SELECTED_TYPE_TEXT,
         image_template_id: null,
+        old_content,
         new_content: selectedDOM.innerHTML,
       };
-      var sectionIndex = sections.findIndex(section => section.selector == path);
-      if (sectionIndex >= 0) {
-        sections[sectionIndex] = newSection;
-      } else {
-        sections.push(newSection);
-      }
-      renderTopBar(sections.length);
+      registerSection(newSection, path);
     }
   }
 
@@ -971,37 +1035,30 @@ var searchPattern = '';
 
   function handleSelectImg(e) {
     e.preventDefault();
-    if (selectedDOM && selectedType == SELECTED_TYPE_IMG) {
-      if (this.firstChild) {
-        var id = parseInt(this.firstChild.getAttribute('id'));
-        var index = metaImgs.findIndex(img => img.id == id);
 
-        if (index >= 0 && metaImgs[index]) {
-          var newURL = metaImgs[index].base_url + metaImgs[index].image_url;
+    if (!selectedDOM || selectedType !== SELECTED_TYPE_IMG) return;
 
-          if (selectedDOM.getAttribute('srcset')) {
-            selectedDOM.setAttribute('srcset', newURL);
-          } else if (selectedDOM.getAttribute('src')) {
-            selectedDOM.setAttribute('src', newURL);
-          }
+    if (!this.firstChild) return;
 
-          var path = $(selectedDOM).getPath();
-          var newSection = {
-            selector: path,
-            type: SELECTED_TYPE_IMG,
-            image_template_id: metaImgs[index].id,
-            merge_tag: null,
-          };
-          var sectionIndex = sections.findIndex(section => section.selector == path);
-          if (sectionIndex >= 0) {
-            sections[sectionIndex] = newSection;
-          } else {
-            sections.push(newSection);
-          }
-          renderTopBar(sections.length);
-        }
-      }
-    }
+    var id = parseInt(this.firstChild.getAttribute('id'));
+    var index = metaImgs.findIndex(img => img.id == id);
+
+    if (index < 0 || !metaImgs[index]) return;
+
+    var newURL = metaImgs[index].base_url + metaImgs[index].image_url;
+    var old_image_url = replaceImage(selectedDOM, newURL);
+
+    if (!old_image_url) return;
+
+    var path = $(selectedDOM).getPath();
+    var newSection = {
+      selector: path,
+      type: SELECTED_TYPE_IMG,
+      old_image_url,
+      image_template_id: metaImgs[index].id,
+      merge_tag: null,
+    };
+    registerSection(newSection, path);
   }
 
   function renderSelectImgModal(show) {
@@ -1054,9 +1111,6 @@ var searchPattern = '';
             bInlineTextEditing = true;
             srcElement.setAttribute('contenteditable', true);
             renderSelectTagModal(true);
-            $(srcElement).bind('keydown click', function() {
-              cursor_changed(this);
-            });
           }
         } else if (ImageNodeNames.includes(srcElement.nodeName)) {
           // If Image Node
@@ -1088,6 +1142,7 @@ var searchPattern = '';
           selectedDOM = srcElement;
           srcElement.classList.add(SELECTED_CLASSNAME);
           selectedType = SELECTED_TYPE_TEXT;
+          setupContextMenu();
         } else if (ImageNodeNames.includes(srcElement.nodeName)) {
           // If Image Node
           // - remove the solid outline from previous element
@@ -1156,24 +1211,6 @@ var searchPattern = '';
     },
     false,
   );
-
-  // chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
-  //     console.log('onMessageHandler', request);
-  //     switch(request.action) {
-  //         case "ACTIVATE_EXTENSION":
-  //             activateExtension(request.token);
-  //             sendResponse(true);
-  //             return true;
-
-  //         case "DEACTIVATE_EXTENSION":
-  //             deactivateExtension();
-  //             sendResponse(true);
-  //             return true;
-
-  //         default:
-  //             break;
-  //     }
-  // });
 
   var bInjected = false;
 
