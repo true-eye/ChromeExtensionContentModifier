@@ -46,6 +46,7 @@ var errorLoadingPersonalizations = null;
 var authToken = null;
 
 var searchPattern = '';
+var staticOldContent = null;
 
 (function(window, jQuery) {
   jQuery.fn.getPath = function() {
@@ -300,7 +301,7 @@ var searchPattern = '';
       switch (action) {
         case 'EditHtml':
           $('.hyperise-extension-modal-center').show();
-          $('#hyperise-extension-textarea-edit-html').val(selectedDOM.outerHTML);
+          $('#hyperise-extension-textarea-edit-html').val(selectedDOM.innerHTML);
           break;
         case 'Remove':
           const path = $(selectedDOM).getPath();
@@ -317,16 +318,16 @@ var searchPattern = '';
               new_image_url: currentSections[currentIndex].old_image_url,
               new_content: currentSections[currentIndex].old_content,
             });
-            currentSections.splice(currentIndex, 1);
           } else {
             revertSections.push({
               selector: path,
               type: selectedType,
-              new_image_url: oldSections[oldIndex].new_image_url,
-              new_content: oldSections[oldIndex].new_content,
+              new_image_url: oldSections[oldIndex].old_image_url,
+              new_content: oldSections[oldIndex].old_content,
             });
-            currentSections[currentIndex] = { ...oldSections[oldIndex] };
           }
+          currentSections.splice(currentIndex, 1);
+          bSectionsModified = true;
           applySections(revertSections);
           renderTopBar();
           break;
@@ -706,6 +707,7 @@ var searchPattern = '';
       for (let currentSection of currentSections) {
         const { selector, type, image_template_id, old_image_url, new_content, old_content } = currentSection;
         let index = oldSections.findIndex(section => section.selector == currentSection.selector);
+
         if (index < 0) {
           revertSections.push({
             selector,
@@ -723,6 +725,16 @@ var searchPattern = '';
             new_content != oldSection.new_content ||
             old_content != oldSection.old_content
           ) {
+            revertSections.push(oldSection);
+          }
+        }
+      }
+
+      if (!revertSections.length) {
+        for (let oldSection of oldSections) {
+          let index = currentSections.findIndex(section => section.selector == oldSection.selector);
+          if (index < 0) {
+            // Here are removed sections so we need to revert them
             revertSections.push(oldSection);
           }
         }
@@ -939,17 +951,15 @@ var searchPattern = '';
       var newHtml = $('#hyperise-extension-textarea-edit-html').val();
       if (selectedDOM) {
         var old_content = selectedDOM.innerHTML;
-        selectedDOM.outerHTML = newHtml;
-        if (selectedType == SELECTED_TYPE_TEXT) {
-          var path = $(selectedDOM).getPath();
-          var newSection = {
-            selector: path,
-            type: selectedType,
-            old_content,
-            new_content: selectedDOM.innerHTML,
-          };
-          registerSection(newSection, path);
-        }
+        selectedDOM.innerHTML = newHtml;
+        var path = $(selectedDOM).getPath();
+        var newSection = {
+          selector: path,
+          type: SELECTED_TYPE_TEXT,
+          old_content,
+          new_content: selectedDOM.innerHTML,
+        };
+        registerSection(newSection, path);
       }
       $('.hyperise-extension-modal-center').hide();
     });
@@ -1091,6 +1101,7 @@ var searchPattern = '';
       merge_tag: null,
     };
     registerSection(newSection, path);
+    bSectionsModified = true;
   }
 
   function renderSelectImgModal(show) {
@@ -1141,7 +1152,26 @@ var searchPattern = '';
           if (!bInlineTextEditing) {
             // Not yet Inline Editing
             bInlineTextEditing = true;
+            staticOldContent = srcElement.innerHTML;
             srcElement.setAttribute('contenteditable', true);
+            srcElement.addEventListener(
+              'input',
+              function() {
+                console.log(this, selectedDOM);
+                if (this === selectedDOM) {
+                  var path = $(selectedDOM).getPath();
+                  var newSection = {
+                    selector: path,
+                    type: SELECTED_TYPE_TEXT,
+                    old_content: staticOldContent,
+                    new_content: selectedDOM.innerHTML,
+                  };
+                  registerSection(newSection, path);
+                  bSectionsModified = true;
+                }
+              },
+              false,
+            );
             renderSelectTagModal(true);
           }
         } else if (ImageNodeNames.includes(srcElement.nodeName)) {

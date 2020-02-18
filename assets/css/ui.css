@@ -137,13 +137,14 @@ body > main {
 
 .hyperise-extension-top-toolbar > .hyperise-extension-top-toolbar-left {
   flex-shrink: 1;
-  width: 100px;
+  width: 50px;
   display: flex;
   justify-content: center;
 }
 
 .hyperise-extension-top-toolbar > .hyperise-extension-top-toolbar-center {
-  flex-grow: 1;
+  width: calc(100% - 250px);
+  overflow: hidden;
 }
 
 .hyperise-extension-top-toolbar > .hyperise-extension-top-toolbar-center > ul {
@@ -168,6 +169,7 @@ body > main {
   text-decoration: none;
   font-size: 16px;
   padding: 0 3px;
+  white-space: nowrap;
 }
 
 .hyperise-extension-top-toolbar > .hyperise-extension-top-toolbar-center > ul > li:last-child > a {
@@ -180,7 +182,7 @@ body > main {
 }
 
 .hyperise-extension-top-toolbar > .hyperise-extension-top-toolbar-right {
-  flex-shrink: 1;
+  width: 150px;
 }
 
 .hyperise-extension-modal-select-tag {
@@ -222,8 +224,9 @@ body > main {
 
 .hyperise-extension-modal-select-tag > .hyperise-extension-modal-select-tag-body > .hyperise-extension-modal-select-tag-body-list {
   list-style-type: none;
-  padding-left: 0px;
+  padding: 0px;
   width: 100%;
+  margin: 0px;
 }
 
 .hyperise-extension-modal-select-tag > .hyperise-extension-modal-select-tag-body > .hyperise-extension-modal-select-tag-body-list > .hyperise-extension-modal-select-tag-body-list-item {
