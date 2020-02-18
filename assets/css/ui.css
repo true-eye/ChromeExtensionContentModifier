@@ -48,6 +48,55 @@ body > main {
   font-size: 20px;
 }
 
+.hyperise-extension-top-bar-title:hover ~ .hyperise-extension-top-bar-hover-menu {
+  display: inline;
+}
+
+.hyperise-extension-top-bar > .hyperise-extension-top-bar-title {
+  line-height: 50px;
+}
+
+.hyperise-extension-top-bar > .hyperise-extension-top-bar-hover-menu {
+  position: absolute;
+  width: 200px;
+  height: 250px;
+  left: calc(50% - 100px);
+  top: 45px;
+  background: white;
+  border: 2px solid #39946f;
+  font-weight: lighter;
+  text-decoration: underline;
+  font-size: 18px;
+  display: none;
+}
+
+.hyperise-extension-top-bar > .hyperise-extension-top-bar-hover-menu:hover {
+  display: inline;
+}
+
+.hyperise-extension-top-bar > .hyperise-extension-top-bar-hover-menu > .hyperise-extension-top-bar-hover-menu-title {
+  text-align: center;
+  padding: 5px 0px;
+  border-bottom: 2px solid #39946f;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items {
+  height: 213px;
+  overflow: auto;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item {
+  padding: 5px 10px 5px 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item:hover {
+  font-weight: bold;
+}
+
 .hyperise-extension-top-bar-button {
   background-color: #ffffff;
   border: 1px solid #39946f;

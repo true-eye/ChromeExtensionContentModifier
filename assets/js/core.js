@@ -656,15 +656,47 @@ var searchPattern = '';
     if (bLoadingPersonalizations) title = 'Loading...';
     if (errorLoadingPersonalizations) title = 'Failed to load! Please try again!';
 
-    $('.hyperise-extension-top-bar').html(
-      '<button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-cancel" ' +
-        disabled +
-        ' >Cancel</button>' +
-        title +
-        '<button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-save" ' +
-        disabled +
-        ' >Save</button>',
-    );
+    var menuItems = '';
+
+    if (currentSections && currentSections.length) {
+      currentSections.forEach((section, index) => {
+        menuItems += `<div class="hyperise-extension-top-bar-hover-menu-item" index="${index}">${section.type} Change: ${section.selector}</div>`;
+      });
+    }
+
+    if (currentSections && currentSections.length) {
+      $('.hyperise-extension-top-bar').html(
+        `
+          <button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-cancel" ${disabled}>Cancel</button>
+          <div class="hyperise-extension-top-bar-title">${title}</div>
+          <button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-save" ${disabled}>Save</button>
+          <div class="hyperise-extension-top-bar-hover-menu">
+            <div class="hyperise-extension-top-bar-hover-menu-title">Changes</div>
+            <div class="hyperise-extension-top-bar-hover-menu-items">${menuItems}</div>
+          </div>
+        `,
+      );
+    } else {
+      $('.hyperise-extension-top-bar').html(
+        `
+          <button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-cancel" ${disabled}>Cancel</button>
+          <div class="hyperise-extension-top-bar-title">${title}</div>
+          <button class="hyperise-extension-top-bar-button hyperise-extension-top-bar-save" ${disabled}>Save</button>
+        `,
+      );
+    }
+
+    $('.hyperise-extension-top-bar-hover-menu-item').click(function() {
+      var index = this.getAttribute('index');
+      var selector = currentSections[index].selector;
+      $(selector).trigger('click');
+      $([document.documentElement, document.body]).animate(
+        {
+          scrollTop: $(selector).offset().top - 150,
+        },
+        500,
+      );
+    });
 
     $('.hyperise-extension-top-bar-cancel').click(function() {
       // todo:
@@ -741,7 +773,7 @@ var searchPattern = '';
             $.ajax({
               url: API_URL_LIST_OF_PERSONALIZATIONS + '?api_token=' + authToken,
               type: 'POST',
-              data: { domain, page, context: newSections },
+              data: { domain, page, context: currentSections },
               success: function(data) {
                 oldSections = [...currentSections];
                 bSectionsModified = false;
