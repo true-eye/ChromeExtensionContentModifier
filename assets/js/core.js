@@ -488,6 +488,7 @@ var staticOldContent = null;
       if (!selector) continue;
 
       const element = document.querySelector(selector);
+      console.log($('html > body:nth-child(2) > h1:nth-child(4)').length);
 
       if (!element) continue;
 
@@ -659,6 +660,8 @@ var staticOldContent = null;
 
     var menuItems = '';
 
+    console.log(metaImgs);
+
     if (currentSections && currentSections.length) {
       currentSections.forEach((section, index) => {
         var img =
@@ -667,6 +670,8 @@ var staticOldContent = null;
             : `<img class="hyperise-extension-top-bar-hover-menu-item-icon" src="https://app.hyperise.io/img/editor/icons/layer_text_ico.png" alt="item" />`;
 
         var title = `<span class="hyperise-extension-top-bar-hover-menu-item-title">${section.new_content}</span>`;
+
+        console.log(section);
 
         if (section.type === SELECTED_TYPE_IMG) {
           var imgIndex = metaImgs.findIndex(img => img.id == section.image_template_id);
@@ -947,7 +952,7 @@ var staticOldContent = null;
         `;
 
     if (document.body) {
-      document.body.insertBefore(element, document.body.firstChild);
+      document.body.appendChild(element);
     }
 
     $('.hyperise-extension-top-toolbar-right-slider').click(function() {
