@@ -661,7 +661,21 @@ var staticOldContent = null;
 
     if (currentSections && currentSections.length) {
       currentSections.forEach((section, index) => {
-        menuItems += `<div class="hyperise-extension-top-bar-hover-menu-item" index="${index}">${section.type} Change: ${section.selector}</div>`;
+        var img =
+          section.type === SELECTED_TYPE_IMG
+            ? `<img class="hyperise-extension-top-bar-hover-menu-item-icon" src="https://app.hyperise.io/img/editor/icons/layer_img_ico.png" alt="item" />`
+            : `<img class="hyperise-extension-top-bar-hover-menu-item-icon" src="https://app.hyperise.io/img/editor/icons/layer_text_ico.png" alt="item" />`;
+
+        var title = `<span class="hyperise-extension-top-bar-hover-menu-item-title">${section.new_content}</span>`;
+
+        if (section.type === SELECTED_TYPE_IMG) {
+          var imgIndex = metaImgs.findIndex(img => img.id == section.image_template_id);
+          if (imgIndex >= 0) {
+            title = `<img src="${metaImgs[imgIndex].preview_image}" class="hyperise-extension-top-bar-hover-menu-item-image" />`;
+          }
+        }
+
+        menuItems += `<div class="hyperise-extension-top-bar-hover-menu-item" index="${index}">${img} ${title}</div>`;
       });
     }
 
@@ -870,10 +884,8 @@ var staticOldContent = null;
                     </ul>
                 </div>
                 <div class="hyperise-extension-top-toolbar-right">
-                    <i class="fas fa-sliders-h"></i>
-                    <i class="fas fa-code"></i>
-                    <i class="fas fa-desktop"></i>
-                    <i class="fas fa-cog"></i>
+                    <i class="fas fa-sliders-h hyperise-extension-top-toolbar-right-slider"></i>
+                    <i class="fas fa-code hyperise-extension-top-toolbar-right-code"></i>
                 </div>
             </div>
             <div class="hyperise-extension-modal-select-tag">
@@ -937,6 +949,25 @@ var staticOldContent = null;
     if (document.body) {
       document.body.insertBefore(element, document.body.firstChild);
     }
+
+    $('.hyperise-extension-top-toolbar-right-slider').click(function() {
+      if (selectedDOM) {
+        if (selectedType === SELECTED_TYPE_IMG) {
+          bShowMetaImgsModal = !bShowMetaImgsModal;
+          renderSelectImgModal();
+        } else if (selectedType === SELECTED_TYPE_TEXT) {
+          bShowMetaTagsModal = !bShowMetaTagsModal;
+          renderSelectTagModal();
+        }
+      }
+    });
+
+    $('.hyperise-extension-top-toolbar-right-code').click(function() {
+      if (selectedDOM) {
+        $('.hyperise-extension-modal-center').toggle();
+        $('#hyperise-extension-textarea-edit-html').val(selectedDOM.innerHTML);
+      }
+    });
 
     $('.hyperise-extension-modal-select-img-search').on('input', function(e) {
       searchPattern = e.target.value;
@@ -1135,6 +1166,10 @@ var staticOldContent = null;
       $('.hyperise-extension-modal-select-img').css('display', 'flex');
     } else $('.hyperise-extension-modal-select-img').css('display', 'none');
   }
+
+  $(document).on('click', 'img', function() {
+    console.log('img clicked');
+  });
 
   document.addEventListener(
     'click',

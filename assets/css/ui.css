@@ -34,6 +34,7 @@ body > main {
   z-index: 1000000;
 
   display: none;
+  font-family: Roboto, system-ui, sans-serif;
 }
 
 .hyperise-extension-top-bar {
@@ -86,7 +87,28 @@ body > main {
 }
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item {
-  padding: 5px 10px 5px 20px;
+  padding: 5px 10px 5px 10px;
+
+  display: flex;
+  align-items: center;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-icon {
+  width: 20px;
+  margin-right: 10px;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-image {
+  width: 130px;
+  height: auto;
+  cursor: pointer;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-image:hover {
+  border: 1px solid #39946f;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -182,7 +204,7 @@ body > main {
 }
 
 .hyperise-extension-top-toolbar > .hyperise-extension-top-toolbar-right {
-  width: 150px;
+  width: 70px;
 }
 
 .hyperise-extension-modal-select-tag {
