@@ -98,6 +98,15 @@ body > main {
   margin-right: 10px;
 }
 
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-remove {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-remove:hover {
+  opacity: 1;
+}
+
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-image {
   width: 130px;
   height: auto;

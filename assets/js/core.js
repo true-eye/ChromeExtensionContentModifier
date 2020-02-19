@@ -92,6 +92,34 @@ var staticOldContent = null;
     return names;
   };
 
+  function removeSectionByPath(path, selectedType) {
+    const oldIndex = oldSections.findIndex(section => section.selector == path);
+    const currentIndex = currentSections.findIndex(section => section.selector == path);
+    let revertSections = [];
+
+    if (currentIndex < 0) return;
+
+    if (oldIndex < 0) {
+      revertSections.push({
+        selector: path,
+        type: selectedType,
+        new_image_url: currentSections[currentIndex].old_image_url,
+        new_content: currentSections[currentIndex].old_content,
+      });
+    } else {
+      revertSections.push({
+        selector: path,
+        type: selectedType,
+        new_image_url: oldSections[oldIndex].old_image_url,
+        new_content: oldSections[oldIndex].old_content,
+      });
+    }
+    currentSections.splice(currentIndex, 1);
+    bSectionsModified = true;
+    applySections(revertSections);
+    renderTopBar();
+  }
+
   function setupContextMenu() {
     /**
      * Function to check if we clicked inside an element with a particular class
@@ -305,31 +333,7 @@ var staticOldContent = null;
           break;
         case 'Remove':
           const path = $(selectedDOM).getPath();
-          const oldIndex = oldSections.findIndex(section => section.selector == path);
-          const currentIndex = currentSections.findIndex(section => section.selector == path);
-          let revertSections = [];
-
-          if (currentIndex < 0) break;
-
-          if (oldIndex < 0) {
-            revertSections.push({
-              selector: path,
-              type: selectedType,
-              new_image_url: currentSections[currentIndex].old_image_url,
-              new_content: currentSections[currentIndex].old_content,
-            });
-          } else {
-            revertSections.push({
-              selector: path,
-              type: selectedType,
-              new_image_url: oldSections[oldIndex].old_image_url,
-              new_content: oldSections[oldIndex].old_content,
-            });
-          }
-          currentSections.splice(currentIndex, 1);
-          bSectionsModified = true;
-          applySections(revertSections);
-          renderTopBar();
+          removeSectionByPath(path, selectedType);
           break;
         default:
           break;
@@ -442,7 +446,7 @@ var staticOldContent = null;
     // GetListOfPersonalizationsPromise(token)
     //   .then(personalizations => {
     //     var domain = window.location.hostname;
-    //     var page = window.location.pathname + window.location.search;
+    //     var page = window.location.pathname;
     //     var index = -1;
     //     if (personalizations) {
     //       index = personalizations.findIndex(p => p.domain == domain && p.page == page);
@@ -534,7 +538,7 @@ var staticOldContent = null;
         GetListOfPersonalizationsPromise(token)
           .then(personalizations => {
             var domain = window.location.hostname;
-            var page = window.location.pathname + window.location.search;
+            var page = window.location.pathname;
             var index = -1;
 
             if (personalizations) {
@@ -680,7 +684,9 @@ var staticOldContent = null;
           }
         }
 
-        menuItems += `<div class="hyperise-extension-top-bar-hover-menu-item" index="${index}">${img} ${title}</div>`;
+        var removeIcon = `<i class="fas fa-trash-alt hyperise-extension-top-bar-hover-menu-item-remove"></i>`;
+
+        menuItems += `<div class="hyperise-extension-top-bar-hover-menu-item" index="${index}">${img} ${title} ${removeIcon}</div>`;
       });
     }
 
@@ -705,6 +711,14 @@ var staticOldContent = null;
         `,
       );
     }
+
+    $('.hyperise-extension-top-bar-hover-menu-item-remove').click(function() {
+      var index = this.parentNode.getAttribute('index');
+      if (currentSections[index]) {
+        console.log('item-remove', currentSections[index]);
+        removeSectionByPath(currentSections[index].selector, currentSections[index].type);
+      }
+    });
 
     $('.hyperise-extension-top-bar-hover-menu-item').click(function() {
       var index = this.getAttribute('index');
@@ -771,7 +785,7 @@ var staticOldContent = null;
       $('.hyperise-extension-top-bar-save').html('Saving...');
 
       var domain = window.location.hostname;
-      var page = window.location.pathname + window.location.search;
+      var page = window.location.pathname;
 
       GetListOfPersonalizationsPromise(authToken)
         .then(personalizations => {
