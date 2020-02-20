@@ -3,26 +3,14 @@
   "name": "Hyperise",
   "version": "1.0",
   "icons": {
-     "16": "/assets/img/icon.png",
-     "64": "/assets/img/icon.png"
+    "16": "/assets/img/icon.png",
+    "64": "/assets/img/icon.png"
   },
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "permissions": [
-    "tabs",
-    "chrome://favicon/",
-    "http://*/*",
-    "https://*/*",
-    "storage",
-    "activeTab",
-    "declarativeContent"
-  ],
+  "permissions": ["chrome://favicon/", "http://*/*", "https://*/*", "storage", "activeTab", "declarativeContent"],
 
-  "background" : {
-    "scripts" : [
-      "/assets/js/jquery-1.11.1.min.js",
-      "/assets/js/background.js",
-      "/assets/js/popup.js"
-    ]
+  "background": {
+    "scripts": ["/assets/js/jquery-1.11.1.min.js", "/assets/js/background.js", "/assets/js/popup.js"]
   },
 
   "browser_action": {
@@ -31,22 +19,17 @@
     "default_popup": "assets/html/popup.html"
   },
 
-  "content_scripts": [ {
-    "js": [
-      // "/assets/js/jquery-1.11.1.min.js",
-      // "/assets/js/content_script.js",
-      // "/assets/js/core.js"
-    ],
-    "css": [
-      "/assets/css/core.css"
-    ],
-    "matches": [
-      "http://*/*",
-      "https://*/*"
-    ]
-  }],
+  "content_scripts": [
+    {
+      "js": [
+        // "/assets/js/jquery-1.11.1.min.js",
+        // "/assets/js/content_script.js",
+        // "/assets/js/core.js"
+      ],
+      "css": ["/assets/css/core.css"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
   "options_page": "assets/html/options.html",
-  "web_accessible_resources": [
-    "/assets/css/ui.css"
-  ]
+  "web_accessible_resources": ["/assets/css/ui.css"]
 }

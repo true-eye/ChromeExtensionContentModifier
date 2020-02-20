@@ -492,7 +492,6 @@ var staticOldContent = null;
       if (!selector) continue;
 
       const element = document.querySelector(selector);
-      console.log($('html > body:nth-child(2) > h1:nth-child(4)').length);
 
       if (!element) continue;
 
