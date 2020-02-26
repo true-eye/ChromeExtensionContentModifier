@@ -59,16 +59,17 @@ body > main {
 
 .hyperise-extension-top-bar > .hyperise-extension-top-bar-hover-menu {
   position: absolute;
-  width: 200px;
-  height: 250px;
+  width: 280px;
+  height: 350px;
   left: calc(50% - 100px);
   top: 45px;
   background: white;
-  border: 2px solid #39946f;
+  border: 2px solid #6a6a6a;
   font-weight: lighter;
-  text-decoration: underline;
-  font-size: 18px;
+  text-decoration: none;
+  font-size: 16px;
   display: none;
+  border-radius: 5px;
 }
 
 .hyperise-extension-top-bar > .hyperise-extension-top-bar-hover-menu:hover {
@@ -78,19 +79,19 @@ body > main {
 .hyperise-extension-top-bar > .hyperise-extension-top-bar-hover-menu > .hyperise-extension-top-bar-hover-menu-title {
   text-align: center;
   padding: 5px 0px;
-  border-bottom: 2px solid #39946f;
+  border-bottom: 2px solid #6a6a6a;
 }
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items {
-  height: 213px;
+  height: 293px;
   overflow: auto;
 }
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item {
-  padding: 5px 10px 5px 10px;
-
+  padding: 10px;
   display: flex;
   align-items: center;
+  border-bottom: 1px dashed #eeeeee;
 }
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-icon {
@@ -100,7 +101,9 @@ body > main {
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-remove {
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0;
+  position: relative;
+  margin-left: 5px;
 }
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item .hyperise-extension-top-bar-hover-menu-item-remove:hover {
@@ -122,6 +125,7 @@ body > main {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  font-size: 14px;
 }
 
 .hyperise-extension-top-bar .hyperise-extension-top-bar-hover-menu-items > .hyperise-extension-top-bar-hover-menu-item:hover {
@@ -137,6 +141,7 @@ body > main {
   font-size: 12px;
   padding: 4px;
   width: 100px;
+  text-align: center;
 }
 
 .hyperise-extension-top-bar-button:disabled {
@@ -261,7 +266,7 @@ body > main {
 }
 
 .hyperise-extension-modal-select-tag > .hyperise-extension-modal-select-tag-body > .hyperise-extension-modal-select-tag-body-list > .hyperise-extension-modal-select-tag-body-list-item {
-  border-bottom: 1px solid black;
+  border-bottom: 1px dashed #eeeeee;
   padding: 5px 0px 5px 10px;
   margin-bottom: 0px;
   font-size: 16px;
@@ -342,7 +347,7 @@ body > main {
 */
 
 .hyperise-extension-modal-select-img {
-  width: 200px;
+  width: 225px;
   height: 350px;
   position: fixed;
   bottom: 50px;
@@ -381,11 +386,12 @@ body > main {
 .hyperise-extension-modal-select-img > .hyperise-extension-modal-select-img-body > .hyperise-extension-modal-select-img-body-list {
   list-style-type: none;
   padding-left: 0px;
+  margin-left: 0px;
   width: 100%;
 }
 
 .hyperise-extension-modal-select-img > .hyperise-extension-modal-select-img-body > .hyperise-extension-modal-select-img-body-list > .hyperise-extension-modal-select-img-body-list-item {
-  border-bottom: 1px solid black;
+  border-bottom: 1px dashed #eeeeee;
   padding: 5px 0px 5px 10px;
   margin-bottom: 0px;
   font-size: 16px;
@@ -393,7 +399,7 @@ body > main {
 }
 
 .hyperise-extension-modal-select-img > .hyperise-extension-modal-select-img-body > .hyperise-extension-modal-select-img-body-list > .hyperise-extension-modal-select-img-body-list-item > img {
-  width: 168px;
+  width: 200px;
   height: 150px;
 }
 

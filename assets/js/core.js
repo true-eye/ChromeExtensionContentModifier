@@ -10,8 +10,9 @@ var MOUSE_IMG_VISITED_CLASSNAME = 'crx_txt_mouse_visited';
 var MOUSE_TXT_VISITED_CLASSNAME = 'crx_img_mouse_visited';
 var SELECTED_CLASSNAME = 'crx_selected';
 var SELECTED_TYPE_TEXT = 'Text';
+var SELECTED_TYPE_INPUT = 'Input';
 var SELECTED_TYPE_IMG = 'Image';
-var TextNodeNames = ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LABEL', 'BUTTON', 'A', 'SPAN', 'STRONG'];
+var TextNodeNames = ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LABEL', 'BUTTON', 'A', 'SPAN', 'STRONG', 'INPUT'];
 var ImageNodeNames = ['IMG'];
 
 // Previous dom, that we want to track, so we can remove the previous styling.
@@ -47,6 +48,7 @@ var authToken = null;
 
 var searchPattern = '';
 var staticOldContent = null;
+var bContextMenuSetup = false;
 
 (function(window, jQuery) {
   jQuery.fn.getPath = function() {
@@ -121,6 +123,8 @@ var staticOldContent = null;
   }
 
   function setupContextMenu() {
+    if (bContextMenuSetup) return;
+    bContextMenuSetup = true;
     /**
      * Function to check if we clicked inside an element with a particular class
      * name.
@@ -335,6 +339,19 @@ var staticOldContent = null;
           const path = $(selectedDOM).getPath();
           removeSectionByPath(path, selectedType);
           break;
+        case 'PersonaliseImage':
+          let imageURL = getElementImgUrl(selectedDOM);
+          if (imageURL) imageURL = imageURL.split(',')[0];
+          var isAbsolute = new RegExp('^([a-z]+://|//)', 'i');
+          console.log(window.location);
+
+          if (isAbsolute.test(imageURL)) {
+            // go crazy here
+            window.open(`https://app.hyperise.io/images/create?bg_image=${encodeURI(imageURL)}`, '_blank');
+          } else {
+            window.open(`https://app.hyperise.io/images/create?bg_image=${window.location.origin + window.location.pathname + encodeURI(imageURL)}`, '_blank');
+          }
+          break;
         default:
           break;
       }
@@ -414,13 +431,13 @@ var staticOldContent = null;
         } else {
           metaImgs = [];
         }
-        renderSelectImgModal();
       },
       error: function(request, error) {
         console.log('GetListOfMergeImgs error:');
       },
       complete: function() {
         bLoadingMetaImgs = false;
+        renderSelectImgModal();
       },
     });
   }
@@ -485,6 +502,15 @@ var staticOldContent = null;
     return old_image_url;
   }
 
+  function getElementImgUrl(element, url) {
+    if (element.getAttribute('srcset')) {
+      return element.getAttribute('srcset');
+    } else if (element.getAttribute('src')) {
+      return element.getAttribute('src');
+    }
+    return null;
+  }
+
   function applySections(sections) {
     for (let section of sections) {
       const { selector, type, image_template_id, new_content, new_image_url } = section;
@@ -498,6 +524,9 @@ var staticOldContent = null;
       switch (type) {
         case SELECTED_TYPE_TEXT:
           element.innerHTML = new_content;
+          break;
+        case SELECTED_TYPE_INPUT:
+          $(element).val(new_content);
           break;
         case SELECTED_TYPE_IMG:
           var index = metaImgs.findIndex(img => img.id == image_template_id);
@@ -663,8 +692,6 @@ var staticOldContent = null;
 
     var menuItems = '';
 
-    console.log(metaImgs);
-
     if (currentSections && currentSections.length) {
       currentSections.forEach((section, index) => {
         var img =
@@ -673,8 +700,6 @@ var staticOldContent = null;
             : `<img class="hyperise-extension-top-bar-hover-menu-item-icon" src="https://app.hyperise.io/img/editor/icons/layer_text_ico.png" alt="item" />`;
 
         var title = `<span class="hyperise-extension-top-bar-hover-menu-item-title">${section.new_content}</span>`;
-
-        console.log(section);
 
         if (section.type === SELECTED_TYPE_IMG) {
           var imgIndex = metaImgs.findIndex(img => img.id == section.image_template_id);
@@ -952,6 +977,9 @@ var staticOldContent = null;
                         <a href="#" class="hyperise-extension-context-menu__link" data-action="Remove">Remove</a>
                     </li>
                     <li class="hyperise-extension-context-menu__item">
+                        <a href="#" class="hyperise-extension-context-menu__link" data-action="PersonaliseImage">Personalise Image</a>
+                    </li>
+                    <li class="hyperise-extension-context-menu__item">
                         <a href="#" class="hyperise-extension-context-menu__link" data-action="EditText">Edit Text</a>
                     </li>
                     <li class="hyperise-extension-context-menu__item">
@@ -973,7 +1001,7 @@ var staticOldContent = null;
         if (selectedType === SELECTED_TYPE_IMG) {
           bShowMetaImgsModal = !bShowMetaImgsModal;
           renderSelectImgModal();
-        } else if (selectedType === SELECTED_TYPE_TEXT) {
+        } else if (selectedType === SELECTED_TYPE_TEXT || selectedType === SELECTED_TYPE_INPUT) {
           bShowMetaTagsModal = !bShowMetaTagsModal;
           renderSelectTagModal();
         }
@@ -1004,7 +1032,7 @@ var staticOldContent = null;
         var path = $(selectedDOM).getPath();
         var newSection = {
           selector: path,
-          type: SELECTED_TYPE_TEXT,
+          type: selectedType,
           old_content,
           new_content: selectedDOM.innerHTML,
         };
@@ -1070,9 +1098,10 @@ var staticOldContent = null;
 
   function registerSection(newSection, selector) {
     var sectionIndex = currentSections.findIndex(section => section.selector == selector);
+    console.log(newSection, currentSections[sectionIndex]);
     if (sectionIndex >= 0) {
-      if (currentSections[sectionIndex].old_image_url) newSection.old_image_url = currentSections[sectionIndex].old_image_url;
-      if (currentSections[sectionIndex].old_content) newSection.old_content = currentSections[sectionIndex].old_content;
+      if (currentSections[sectionIndex].old_image_url != undefined) newSection.old_image_url = currentSections[sectionIndex].old_image_url;
+      if (currentSections[sectionIndex].old_content != undefined) newSection.old_content = currentSections[sectionIndex].old_content;
       currentSections[sectionIndex] = newSection;
     } else {
       currentSections.push(newSection);
@@ -1084,16 +1113,18 @@ var staticOldContent = null;
   function handleSelectTag(e) {
     e.preventDefault();
     if (selectedDOM) {
-      var old_content = selectedDOM.innerHTML;
+      var old_content = selectedType === SELECTED_TYPE_TEXT ? selectedDOM.innerHTML : $(selectedDOM).val();
       replaceSelectedText(this.innerHTML);
+
+      console.log(selectedDOM);
 
       var path = $(selectedDOM).getPath();
       var newSection = {
         selector: path,
-        type: SELECTED_TYPE_TEXT,
+        type: selectedType,
         image_template_id: null,
         old_content,
-        new_content: selectedDOM.innerHTML,
+        new_content: selectedType === SELECTED_TYPE_TEXT ? selectedDOM.innerHTML : $(selectedDOM).val(),
       };
       registerSection(newSection, path);
     }
@@ -1204,6 +1235,7 @@ var staticOldContent = null;
           // If Text Node
           if (!bInlineTextEditing) {
             // Not yet Inline Editing
+
             bInlineTextEditing = true;
             staticOldContent = srcElement.innerHTML;
             srcElement.setAttribute('contenteditable', true);
@@ -1256,7 +1288,29 @@ var staticOldContent = null;
           // - add a solid outline to new selected element
           selectedDOM = srcElement;
           srcElement.classList.add(SELECTED_CLASSNAME);
-          selectedType = SELECTED_TYPE_TEXT;
+          selectedType = srcElement.nodeName == 'INPUT' ? SELECTED_TYPE_INPUT : SELECTED_TYPE_TEXT;
+
+          if (srcElement.nodeName == 'INPUT') {
+            bInlineTextEditing = true;
+            staticOldContent = $(srcElement).val();
+            $(srcElement).change(function() {
+              if (this === selectedDOM) {
+                var path = $(selectedDOM).getPath();
+                var newSection = {
+                  selector: path,
+                  type: SELECTED_TYPE_INPUT,
+                  old_content: staticOldContent,
+                  new_content: $(selectedDOM).val(),
+                };
+                registerSection(newSection, path);
+                bSectionsModified = true;
+              }
+            });
+            renderSelectTagModal(true);
+          }
+
+          $('.hyperise-extension-context-menu__items li:nth-child(3)').hide();
+          $('.hyperise-extension-context-menu__items li:nth-child(4)').show();
           setupContextMenu();
         } else if (ImageNodeNames.includes(srcElement.nodeName)) {
           // If Image Node
@@ -1271,7 +1325,11 @@ var staticOldContent = null;
           srcElement.classList.add(SELECTED_CLASSNAME);
           selectedType = SELECTED_TYPE_IMG;
 
+          bLoadingMetaImgs = true;
+          GetListOfMergeImgs(authToken);
           renderSelectImgModal(true);
+          $('.hyperise-extension-context-menu__items li:nth-child(3)').show();
+          $('.hyperise-extension-context-menu__items li:nth-child(4)').hide();
           setupContextMenu();
         }
       }

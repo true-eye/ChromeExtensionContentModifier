@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Hyperise",
+  "name": "Hyperise: website personalization",
   "version": "1.0",
   "icons": {
     "16": "/assets/img/icon.png",
@@ -14,18 +14,14 @@
   },
 
   "browser_action": {
-    "default_title": "Hyperise",
+    "default_title": "Hyperise: website personalization",
     "default_icon": "assets/img/icon.png",
     "default_popup": "assets/html/popup.html"
   },
 
   "content_scripts": [
     {
-      "js": [
-        // "/assets/js/jquery-1.11.1.min.js",
-        // "/assets/js/content_script.js",
-        // "/assets/js/core.js"
-      ],
+      "js": [],
       "css": ["/assets/css/core.css"],
       "matches": ["http://*/*", "https://*/*"]
     }
